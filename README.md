@@ -6,28 +6,24 @@ Un gestionnaire d'e-mails moderne développé avec Vue.js 3, TypeScript et Tailw
 
 ### Fonctionnalités principales
 - ✅ **Authentification personnalisée** - Inscription/connexion avec JWT
+- ✅ **Authentification OAuth** - Connexion avec Google et callback sécurisé
 - ✅ **Base de données PostgreSQL** - Stockage local des utilisateurs et e-mails
 - ✅ **Gestion des e-mails** - Ajout/suppression d'e-mails dans la liste
 - ✅ **Lecture détaillée** - Page dédiée pour lire le contenu complet des e-mails
 - ✅ **Recherche avancée** - Filtrage par expéditeur, mot-clé, date ou combinaison
 - ✅ **API REST** - Backend Express.js avec endpoints sécurisés
 
-### Fonctionnalités bonus
-- ✅ **Backend complet** - API REST avec Express.js et PostgreSQL
-- ✅ **Interface responsive** - Design adaptatif pour tous les écrans
-- ✅ **Animations et transitions** - Interface moderne avec micro-interactions
-- ✅ **Gestion d'état avancée** - Architecture modulaire avec stores dédiés
-- ✅ **Sécurité** - Authentification JWT et hashage des mots de passe
-
 ## 🛠️ Technologies utilisées
 
 ### Frontend
 - **Vue.js 3** - Framework JavaScript progressif
 - **TypeScript** - Typage statique pour JavaScript
-- **Vue Router** - Routage côté client (4 routes)
+- **Vue Router** - Routage côté client (6 routes)
 - **Tailwind CSS** - Framework CSS utilitaire
 - **Axios** - Client HTTP pour les appels API
 - **Vite** - Outil de build moderne et rapide
+- **Lucide Vue** - Icônes modernes et accessibles
+- **Date-fns** - Gestion et formatage des dates
 
 ### Backend
 - **Node.js** - Runtime JavaScript côté serveur
@@ -40,32 +36,37 @@ Un gestionnaire d'e-mails moderne développé avec Vue.js 3, TypeScript et Tailw
 
 ```
 ├── src/                    # Frontend Vue.js
-│   ├── components/         # Composants réutilisables
 │   ├── stores/            # Gestion d'état
-│   │   ├── authStore.ts   # Authentification
+│   │   ├── authStore.ts   # Authentification et OAuth
 │   │   └── emailStore.ts  # Gestion des e-mails
 │   ├── views/             # Pages de l'application
-│   │   ├── Home.vue       # Connexion/inscription
+│   │   ├── Home.vue       # Page d'accueil
+│   │   ├── Login.vue      # Connexion/inscription
+│   │   ├── AuthCallback.vue # Callback OAuth Google
 │   │   ├── EmailList.vue  # Liste des e-mails
 │   │   ├── EmailDetail.vue # Détail d'un e-mail
 │   │   └── Profile.vue    # Profil utilisateur
+│   ├── router/            # Configuration des routes
 │   └── main.ts            # Point d'entrée
-├── server/                # Backend Express.js
+├── server/                # Backend Express.js (principal)
 │   ├── database/          # Configuration base de données
 │   ├── routes/            # Routes API
-│   │   ├── auth.js        # Authentification
+│   │   ├── auth.js        # Authentification et OAuth
 │   │   └── emails.js      # Gestion des e-mails
-│   ├── middleware/        # Middlewares
+│   ├── middleware/        # Middlewares de sécurité
 │   └── index.js           # Serveur principal
+├── backend/               # Backend alternatif (MongoDB - legacy)
 └── README.md
 ```
 
 ## 🚦 Routes de l'application
 
-1. **/** - Page d'accueil avec connexion/inscription
-2. **/emails** - Liste des e-mails avec fonctionnalités de recherche
-3. **/email/:id** - Page de détail d'un e-mail spécifique
-4. **/profile** - Profil utilisateur et statistiques
+1. **/** - Page d'accueil avec tableau de bord
+2. **/login** - Page de connexion/inscription
+3. **/auth/callback** - Callback pour l'authentification OAuth Google
+4. **/emails** - Liste des e-mails avec fonctionnalités de recherche
+5. **/email/:id** - Page de détail d'un e-mail spécifique
+6. **/profile** - Profil utilisateur et statistiques
 
 ## 🗄️ API Endpoints
 
@@ -74,6 +75,8 @@ Un gestionnaire d'e-mails moderne développé avec Vue.js 3, TypeScript et Tailw
 - `POST /api/auth/login` - Connexion
 - `GET /api/auth/profile` - Profil utilisateur
 - `GET /api/auth/verify` - Vérification du token
+- `GET /api/auth/google` - Redirection vers Google OAuth
+- `GET /api/auth/google/callback` - Callback OAuth Google
 
 ### E-mails
 - `GET /api/emails` - Liste des e-mails (avec filtres)
@@ -87,7 +90,7 @@ Un gestionnaire d'e-mails moderne développé avec Vue.js 3, TypeScript et Tailw
 ### 1. Prérequis
 - Node.js (v18+)
 - PostgreSQL (v12+)
-- npm ou yarn
+- npm
 
 ### 2. Installation des dépendances
 ```bash
@@ -101,25 +104,30 @@ npm install
 
 ### 4. Variables d'environnement
 ```env
+# Configuration de la base de données PostgreSQL
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=email_manager
 DB_USER=postgres
 DB_PASSWORD=your_password
-JWT_SECRET=your-super-secret-jwt-key
+
+# Configuration JWT
+JWT_SECRET=your-super-secret-jwt-key-change-in-production
+
+# Port du serveur backend
 PORT=3001
+
+# Configuration OAuth Google
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GOOGLE_REDIRECT_URI=http://localhost:3001/api/auth/google/callback
 ```
 
 ### 5. Lancement de l'application
 
-#### Démarrage du backend
+#### Démarrage simultané du backend et du frontend
 ```bash
-npm run server
-```
-
-#### Démarrage du frontend (dans un autre terminal)
-```bash
-npm run dev
+npm run dev:full
 ```
 
 L'application sera accessible sur :
@@ -129,10 +137,12 @@ L'application sera accessible sur :
 ## 🔒 Sécurité
 
 - **Authentification JWT** - Tokens sécurisés avec expiration
+- **OAuth 2.0 Google** - Authentification sécurisée via Google
 - **Hashage des mots de passe** - bcryptjs avec salt
 - **Validation des données** - Validation côté serveur
 - **Protection CORS** - Configuration sécurisée
 - **Sanitisation HTML** - Protection contre XSS
+- **Middleware d'authentification** - Vérification automatique des tokens
 
 ## 📊 Base de données
 
@@ -155,36 +165,3 @@ L'application sera accessible sur :
 - `is_read` - Statut de lecture
 - `has_attachments` - Présence de pièces jointes
 - `is_visible` - Visibilité (suppression logique)
-
-## 🎯 Critères d'évaluation
-
-- ✅ **25% Démonstration** - Interface utilisateur et expérience
-- ✅ **75% Fonctionnalités** - Implémentation complète des exigences
-- ✅ **Utilisation de GitHub** - Workflow et historique des commits
-- ✅ **4 routes minimum** - Navigation complète de l'application
-- ✅ **Bonus backend** - API REST complète avec PostgreSQL
-
-## 📚 Documentation du code
-
-Le code est entièrement documenté avec des commentaires JSDoc pour :
-- Les fonctions complexes
-- Les interfaces TypeScript
-- Les stores et leur logique métier
-- Les routes API et leur sécurité
-
-## 🔧 Développement
-
-### Scripts disponibles
-- `npm run dev` - Démarrage du frontend en mode développement
-- `npm run server` - Démarrage du serveur backend
-- `npm run build` - Build de production du frontend
-- `npm run preview` - Aperçu du build de production
-
-### Workflow Git recommandé
-- **master** - Code de production stable
-- **develop** - Développement en cours
-- Commits réguliers avec messages descriptifs
-
----
-
-**Développé avec ❤️ en Vue.js 3, TypeScript et PostgreSQL**
