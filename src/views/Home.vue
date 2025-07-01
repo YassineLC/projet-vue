@@ -54,7 +54,7 @@
                     Total des emails
                   </dt>
                   <dd class="text-lg font-medium text-gray-900">
-                    {{ totalEmails }}
+                    {{ emailStats.total }}
                   </dd>
                 </dl>
               </div>
@@ -76,7 +76,7 @@
                     Emails lus
                   </dt>
                   <dd class="text-lg font-medium text-gray-900">
-                    {{ readEmails }}
+                    {{ emailStats.read }}
                   </dd>
                 </dl>
               </div>
@@ -98,7 +98,7 @@
                     Non lus
                   </dt>
                   <dd class="text-lg font-medium text-gray-900">
-                    {{ unreadEmails }}
+                    {{ emailStats.unread }}
                   </dd>
                 </dl>
               </div>
@@ -159,32 +159,21 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useEmailStore } from '@/stores/emailStore'
 
 const emailStore = useEmailStore()
-
-// Calculer les statistiques
-const totalEmails = computed(() => {
-  return Array.isArray(emailStore.emails.value) 
-    ? emailStore.emails.value.filter(email => email.isVisible).length 
-    : 0;
-});
-
-const readEmails = computed(() => {
-  return Array.isArray(emailStore.emails.value) 
-    ? emailStore.emails.value.filter(email => email.isVisible && email.isRead).length 
-    : 0;
-});
-
-const unreadEmails = computed(() => {
-  return Array.isArray(emailStore.emails.value) 
-    ? emailStore.emails.value.filter(email => email.isVisible && !email.isRead).length 
-    : 0;
+const emailStats = ref({
+  total: 0,
+  read: 0,
+  unread: 0
 })
 
-// Charger les emails au montage du composant
+// Charger les statistiques au montage du composant
 onMounted(async () => {
-  await emailStore.fetchEmails()
+  const stats = await emailStore.fetchEmailStats();
+  if (stats) {
+    emailStats.value = stats;
+  }
 })
 </script>

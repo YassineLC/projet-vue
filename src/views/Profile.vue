@@ -153,16 +153,11 @@ const refreshing = ref(false)
 /**
  * Statistiques des e-mails
  */
-const emailStats = computed(() => {
-  const emails = Array.isArray(emailStore.emails) 
-    ? emailStore.emails.filter(email => email.isVisible) 
-    : [];
-  return {
-    total: emails.length,
-    read: emails.filter(email => email.isRead).length,
-    unread: emails.filter(email => !email.isRead).length,
-  };
-});
+const emailStats = ref({
+  total: 0,
+  read: 0,
+  unread: 0
+})
 
 /**
  * Actualise les informations du profil
@@ -171,8 +166,11 @@ const refreshProfile = async () => {
   refreshing.value = true
   
   try {
-    // Actualise les e-mails pour mettre à jour les statistiques
-    await emailStore.fetchEmails()
+    // Actualise les statistiques des emails
+    const stats = await emailStore.fetchEmailStats();
+    if (stats) {
+      emailStats.value = stats;
+    }
     
     // Simule un délai pour l'UX
     await new Promise(resolve => setTimeout(resolve, 1000))
@@ -215,11 +213,14 @@ const getBrowserInfo = (): string => {
 /**
  * Vérifie l'authentification au montage
  */
-onMounted(() => {
+onMounted(async () => {
   if (!authStore.isAuthenticated) {
     router.push('/');
-  } else if (!authStore.user) {
-    console.error('Erreur: Les informations utilisateur sont manquantes.');
+  } else {
+    const stats = await emailStore.fetchEmailStats();
+    if (stats) {
+      emailStats.value = stats;
+    }
   }
 })
 </script>

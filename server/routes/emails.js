@@ -5,8 +5,37 @@ import { authenticateToken } from '../middleware/auth.js'
 
 const router = express.Router()
 
-// ✅ Toutes les routes sécurisées
 router.use(authenticateToken)
+
+/**
+ * 📊 Statistiques des emails
+ */
+router.get('/stats', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT 
+        COUNT(*) FILTER (WHERE is_visible = true) AS total,
+        COUNT(*) FILTER (WHERE is_visible = true AND is_read = true) AS read,
+        COUNT(*) FILTER (WHERE is_visible = true AND is_read = false) AS unread
+       FROM emails
+       WHERE user_id = $1`,
+      [req.user.userId]
+    );
+
+    const stats = result.rows[0];
+
+    res.json({
+      stats: {
+        total: parseInt(stats.total || 0),
+        read: parseInt(stats.read || 0),
+        unread: parseInt(stats.unread || 0)
+      }
+    });
+  } catch (error) {
+    console.error('Erreur lors de la récupération des statistiques:', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération des statistiques' });
+  }
+});
 
 /**
  * 📥 Liste des e-mails reçus

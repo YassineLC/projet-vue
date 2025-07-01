@@ -27,6 +27,11 @@ const loading = ref(false) // Ajout de la propriété loading
 const error = ref<string | null>(null)
 const sentEmails = ref<Email[]>([]); // Ajout de la propriété sentEmails
 const receivedEmails = ref<Email[]>([]); // Ajout de la propriété receivedEmails
+const stats = ref({
+  total: 0,
+  read: 0,
+  unread: 0
+});
 
 const formatDate = (dateString: string): string => {
   return new Date(dateString).toLocaleString('fr-FR', {
@@ -168,6 +173,23 @@ export const useEmailStore = () => {
     filteredEmails.value = emails.value // Réinitialise les e-mails filtrés
   }
 
+  const fetchEmailStats = async () => {
+    loading.value = true;
+    error.value = null;
+
+    try {
+      const response = await axios.get('/api/emails/stats');
+      stats.value = response.data.stats;
+      return stats.value;
+    } catch (err: any) {
+      console.error('Erreur lors du chargement des statistiques:', err);
+      error.value = err.response?.data?.error || 'Erreur lors du chargement des statistiques';
+      return null;
+    } finally {
+      loading.value = false;
+    }
+  };
+
   return {
     emails: computed(() => emails.value),
     sentEmails: computed(() => sentEmails.value),
@@ -176,9 +198,11 @@ export const useEmailStore = () => {
     filters: computed(() => filters.value),
     loading: computed(() => loading.value),
     error: computed(() => error.value),
+    stats: computed(() => stats.value),
     fetchEmails,
     fetchSentEmails,
     fetchReceivedEmails, // Expose fetchReceivedEmails ici
+    fetchEmailStats,
     getEmailById,
     addEmail,
     hideEmail,
