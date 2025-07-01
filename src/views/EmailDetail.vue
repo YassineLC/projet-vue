@@ -17,7 +17,7 @@
     </div>
 
     <!-- Contenu de l'e-mail -->
-    <div v-else-if="email" class="card">
+    <div v-else-if="email" class="card" :class="{'border-l-4 border-blue-500': !email.isRead}">
       <!-- En-tête de l'e-mail -->
       <div class="p-6 border-b border-gray-200">
         <div class="flex items-start justify-between mb-4">
@@ -40,7 +40,9 @@
           </div>
           
           <div class="flex items-center space-x-2 ml-4">
-            <span v-if="!email.isRead" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
+            <!-- Badge Non lu plus visible -->
+            <span v-if="!email.isRead" class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+              <span class="w-2 h-2 bg-blue-500 rounded-full mr-1.5"></span>
               Non lu
             </span>
             
@@ -144,9 +146,24 @@ const goBack = () => {
 }
 
 const handleMarkAsRead = async () => {
-  if (email.value) {
-    await emailStore.markAsRead(email.value.id)
-    email.value.isRead = true
+  if (email.value && !email.value.isRead) {
+    try {
+      const result = await emailStore.markAsRead(email.value.id);
+      if (result.success) {
+        email.value.isRead = true;
+        
+        // Afficher une notification ou feedback visuel (optionnel)
+        // Par exemple, vous pourriez ajouter un état temporaire :
+        const markingRead = ref(true);
+        setTimeout(() => {
+          markingRead.value = false;
+        }, 2000);
+      } else {
+        console.error("Erreur lors du marquage comme lu:", result.error);
+      }
+    } catch (error) {
+      console.error("Erreur lors du marquage comme lu:", error);
+    }
   }
 }
 

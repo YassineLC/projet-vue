@@ -159,9 +159,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useEmailStore } from '@/stores/emailStore'
+import { useRoute } from 'vue-router'
 
+const route = useRoute()
 const emailStore = useEmailStore()
 const emailStats = ref({
   total: 0,
@@ -174,6 +176,15 @@ onMounted(async () => {
   const stats = await emailStore.fetchEmailStats();
   if (stats) {
     emailStats.value = stats;
+  }
+})
+
+watch(() => route.path, async (newPath, oldPath) => {
+  if (newPath !== oldPath) {
+    const stats = await emailStore.fetchEmailStats();
+    if (stats) {
+      emailStats.value = stats;
+    }
   }
 })
 </script>

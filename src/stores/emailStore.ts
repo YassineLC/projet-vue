@@ -138,10 +138,28 @@ export const useEmailStore = () => {
   const markAsRead = async (id: string) => {
     try {
       await axios.patch(`/api/emails/${id}/read`)
+      
+      // Mise à jour de l'email dans le store
       const email = emails.value.find(e => e.id === id)
-      if (email) {
+      if (email && !email.isRead) {
         email.isRead = true
+        
+        // Mise à jour des emails reçus
+        const receivedEmail = receivedEmails.value.find(e => e.id === id)
+        if (receivedEmail) {
+          receivedEmail.isRead = true
+        }
+        
+        // Mise à jour des statistiques
+        if (stats.value) {
+          stats.value.read++;
+          stats.value.unread--;
+        } else {
+          // Si les statistiques n'ont pas été chargées, on les charge
+          await fetchEmailStats();
+        }
       }
+      
       return { success: true }
     } catch (err: any) {
       console.error('Erreur lors de la mise à jour de l\'e-mail:', err)

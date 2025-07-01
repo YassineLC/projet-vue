@@ -25,11 +25,18 @@
           v-for="email in receivedEmails"
           :key="email.id"
           class="card p-4 hover:shadow-lg transition-shadow cursor-pointer"
+          :class="{'border-l-4 border-blue-500': !email.isRead}"
           @click="goToEmail(email.id)"
         >
           <div class="flex items-start justify-between">
             <div class="flex-1">
-              <h3 class="text-lg font-medium text-gray-900 truncate">{{ email.subject }}</h3>
+              <!-- Titre en gras si non lu -->
+              <h3 class="text-lg truncate" :class="{'font-bold': !email.isRead, 'font-medium': email.isRead}">
+                {{ email.subject }}
+                <span v-if="!email.isRead" class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  Non lu
+                </span>
+              </h3>
               <p class="text-sm text-gray-600">De: {{ email.sender.name }} <{{ email.sender.email }}></p>
               <p class="text-sm text-gray-500">Reçu le: {{ formatDate(email.receivedDateTime) }}</p>
             </div>

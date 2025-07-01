@@ -130,4 +130,30 @@ router.patch('/:id/hide', async (req, res) => {
   }
 })
 
+/**
+ * ✓ Marquer un e-mail comme lu
+ */
+router.patch('/:id/read', async (req, res) => {
+  const { id } = req.params
+
+  try {
+    const result = await pool.query(
+      `UPDATE emails
+       SET is_read = true
+       WHERE id = $1 AND user_id = $2
+       RETURNING id`,
+      [id, req.user.userId]
+    )
+    
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'E-mail non trouvé' })
+    }
+    
+    res.json({ success: true })
+  } catch (error) {
+    console.error('Erreur lors du marquage comme lu:', error)
+    res.status(500).json({ error: 'Erreur lors du marquage de l\'e-mail comme lu' })
+  }
+})
+
 export default router
