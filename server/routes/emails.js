@@ -2,6 +2,7 @@
 import express from 'express'
 import { pool } from '../database/init.js'
 import { authenticateToken } from '../middleware/auth.js'
+import { importGmailEmails } from '../services/importGmail.js';
 
 const router = express.Router()
 
@@ -155,5 +156,27 @@ router.patch('/:id/read', async (req, res) => {
     res.status(500).json({ error: 'Erreur lors du marquage de l\'e-mail comme lu' })
   }
 })
+
+router.post('/import', async (req, res) => {
+  try {
+    console.log('userId reçu dans /import:', req.user.userId);
+    const userId = req.user.userId;
+    const result = await pool.query(
+      'SELECT google_access_token FROM users WHERE id = $1',
+      [userId]
+    );
+    console.log('Résultat SQL:', result.rows);
+    const accessToken = result.rows[0]?.google_access_token;
+    if (!accessToken) {
+      console.log('Pas de token Google pour userId:', userId);
+      return res.status(400).json({ error: 'AccessToken manquant' });
+    }
+    await importGmailEmails(accessToken, userId);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Erreur lors de l\'import Gmail:', error);
+    res.status(500).json({ error: 'Erreur lors de l\'import Gmail' });
+  }
+});
 
 export default router

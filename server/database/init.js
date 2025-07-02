@@ -22,7 +22,6 @@ console.log('Configuration DB:', {
   host: pool.options.host,
   database: pool.options.database,
   port: pool.options.port,
-  // Ne pas afficher le mot de passe pour des raisons de sécurité
   password: '***'
 });
 
@@ -34,10 +33,11 @@ export const initDatabase = async () => {
     // Supprimer les tables existantes si elles existent
     await pool.query(`
       DROP TABLE IF EXISTS emails CASCADE;
+      DROP TABLE IF EXISTS sent_emails CASCADE;
       DROP TABLE IF EXISTS users CASCADE;
     `);
 
-    // Recréer la table users avec les colonnes nécessaires pour OAuth
+    // Table users avec google_access_token
     await pool.query(`
       CREATE TABLE users (
         id SERIAL PRIMARY KEY,
@@ -46,16 +46,18 @@ export const initDatabase = async () => {
         avatar_url TEXT,
         oauth_provider VARCHAR(50),
         oauth_id VARCHAR(255),
+        google_access_token TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
 
-    // Recréer la table emails avec une clé étrangère vers users
+    // Table emails avec gmail_id et index unique
     await pool.query(`
       CREATE TABLE emails (
         id SERIAL PRIMARY KEY,
         user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        gmail_id TEXT,
         subject VARCHAR(255) NOT NULL,
         sender_name VARCHAR(255),
         sender_email VARCHAR(255),
@@ -63,7 +65,23 @@ export const initDatabase = async () => {
         received_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         is_read BOOLEAN DEFAULT false,
         has_attachments BOOLEAN DEFAULT false,
-        is_visible BOOLEAN DEFAULT true
+        is_visible BOOLEAN DEFAULT true,
+        UNIQUE (gmail_id, user_id)
+      );
+    `);
+
+    // Table sent_emails avec gmail_id et index unique
+    await pool.query(`
+      CREATE TABLE sent_emails (
+        id SERIAL PRIMARY KEY,
+        sender_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        gmail_id TEXT,
+        subject VARCHAR(255) NOT NULL,
+        recipient_name VARCHAR(255),
+        recipient_email VARCHAR(255),
+        body TEXT,
+        sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE (gmail_id, sender_id)
       );
     `);
 

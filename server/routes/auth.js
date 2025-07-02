@@ -92,6 +92,11 @@ router.get('/google/callback', async (req, res) => {
       user = result.rows[0];
     }
 
+    await pool.query(
+  'UPDATE users SET google_access_token = $1 WHERE id = $2',
+  [tokenData.access_token, user.id]
+);
+
     // ✅ Import Gmail ici !
     await importGmailEmails(tokenData.access_token, user.id);
 
